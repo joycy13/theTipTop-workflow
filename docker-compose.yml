@@ -25,6 +25,7 @@ services:
     volumes:
       - $PWD/jenkins_home:/var/jenkins_home
       - $PWD:/app
+     user: 0:0
 
 #---------------------
 # terraform
