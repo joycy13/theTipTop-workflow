@@ -1,2 +1,2 @@
 # theTipTop-workflow
-Contient les fichiers requis pour créer un environnement d'intégration continue avec Jenkins
+Contains the files required to create a continuous integration environment with jenkins

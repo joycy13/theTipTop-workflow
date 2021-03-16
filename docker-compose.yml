@@ -1,0 +1,42 @@
+version: '3.8'
+
+#---------------------
+# jenkins 
+#---------------------
+
+  jenkins:
+    build:
+      context: .
+      dockerfile: jenkins.Dockerfile
+    container_name: docker-jenkins
+    ports: 
+      - 8080:8080
+    volumes:
+      - $PWD/jenkins_home:/var/jenkins_home
+      - $PWD:/app
+
+#---------------------
+# jenkins 
+#---------------------
+
+  reverse-proxy:
+    image: traefik
+    ports:
+      - "80:80" # The HTTP port
+      - "443:443" # The HTTPS port
+      - "8080:8080" # The web UI
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
+      - ./traefik/traefik.toml:/traefik.toml # Traefik configuration file
+      - ./volumes/traefik-acme:/acme # Tell Traefik to save SSL certs here
+#---------------------
+# terraform
+#---------------------
+
+  terraform:
+    build:
+      context: .
+      dockerfile: terraform.Dockerfile
+    container_name: docker-terraform
+   
+      
