@@ -1,4 +1,27 @@
 version: '3.8'
+networks:
+  proxy:
+    driver: bridge
+
+
+#---------------------
+# traefik
+#---------------------
+  reverse-proxy:
+    image: traefik
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker
+    ports:
+      # The HTTP port
+      - 80:80
+      # The Web UI (enabled by --api.insecure=true)
+      - 8080:8080
+      - 443:443 # The HTTPS port
+    networks:
+      - proxy
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
 
 #---------------------
 # jenkins 
@@ -9,26 +32,15 @@ version: '3.8'
       context: .
       dockerfile: jenkins.Dockerfile
     container_name: docker-jenkins
-    ports: 
-      - 8080:8080
+    networks:
+       - proxy
     volumes:
       - $PWD/jenkins_home:/var/jenkins_home
       - $PWD:/app
+    labels:
+      - traefik.http.routers.jenkins-master-docker.rule=Host(`jenkins.docker.localhost`)
+      - traefik.http.services.jenkins-master-docker.loadbalancer.server.port=8080
 
-#---------------------
-# jenkins 
-#---------------------
-
-  reverse-proxy:
-    image: traefik
-    ports:
-      - "80:80" # The HTTP port
-      - "443:443" # The HTTPS port
-      - "8080:8080" # The web UI
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
-      - ./traefik/traefik.toml:/traefik.toml # Traefik configuration file
-      - ./volumes/traefik-acme:/acme # Tell Traefik to save SSL certs here
 #---------------------
 # terraform
 #---------------------
