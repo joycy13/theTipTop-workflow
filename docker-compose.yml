@@ -1,5 +1,7 @@
 version: '3.8'
-    
+volumes:
+  gogs-data:  
+
 services:
 #---------------------
 # reverse proxy
@@ -28,6 +30,56 @@ services:
     user: 0:0
 
 #---------------------
+# mysql database
+#--------------------- 
+  mysql:
+    container_name: mysql
+    image: mysql:latest
+    ports:
+      - 3306:3306 #VM:Containter
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - $PWD/sql/sql-backup/:/backup/
+    command: --character-set-server=utf8 --collation-server=utf8_general_ci
+
+#---------------------
+# phpmyadmin
+#---------------------  
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: docker-phpmyadmin
+    depends_on:
+      - mysql
+    ports:
+      - 8081:80 #VM:Containter
+    environment:
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      PMA_HOST: mysql
+
+#---------------------
+# gogs
+#---------------------  
+  gogs:
+    image: gogs/gogs
+    restart: always
+    container_name: gogs
+    ports:
+      - "10022:22"
+      - 3000:3000
+    volumes:
+      - gogs-data:/data
+    depends_on:
+      - mysql
+    environment:
+      MYSQL_DATABASE: gogs
+      MYSQL_USERNAME: ${MYSQL_USERNAME}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      PMA_HOST: mysql
+
+#---------------------
 # terraform 
 #---------------------
 
@@ -38,3 +90,5 @@ services:
   #   container_name: terraform
   #   networks:
   #     - proxy
+
+ 
