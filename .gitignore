@@ -1,0 +1,4 @@
+environements/**
+!environements/.env.example
+jenkins_home/**
+/data
