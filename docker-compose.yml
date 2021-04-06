@@ -1,6 +1,7 @@
 version: '3'
 networks: 
   private:
+    name: private
   web:
     name: web
   
@@ -14,16 +15,15 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 8080:8080
     command:
-#      - --api=true
- #     - --api.dashboard=true
-#      - --providers.docker.watch=true
- #     - --provider.docker.network=web
-
+      - --api=true
+      - --api.dashboard=true
+      
       - "--log.level=DEBUG"
       - "--api.insecure=true"
       - "--providers.docker=true"
+      - --providers.docker.watch=true
+      - --providers.docker.network=web
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
     labels:
@@ -108,9 +108,11 @@ services:
      labels:
        - traefik.enable=true
        - traefik.http.routers.pma.rule=Host(`pma.dsp4-5archio19-ah-je-gh-yb.fr`)
+       
      networks: 
       - private
       - web
+      
 #---------------------
 # jenkins 
 #---------------------
