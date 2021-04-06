@@ -1,94 +1,103 @@
-version: '3.8'
-volumes:
-  gogs-data:  
-
+version: '3'
+networks: 
+  web:
+  private:
+    
 services:
-#---------------------
-# reverse proxy
-#---------------------
-  reverse-proxy:
-    image: nginx
-    container_name: nginx-reverse-proxy
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+  traefik:
+    restart: unless-stopped
+    image: traefik:v2.4.2
     ports:
-      - 80:80
-      - 443:443
- 
-#---------------------
-# jenkins 
-#---------------------
-
-  jenkins:
-    build:
-      context: .
-      dockerfile: jenkins.Dockerfile
-    container_name: jenkins
+      - "80:80"
+      - "443:443"
+    command:
+      - --api=true
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --entrypoint.web.address=:80
+      - --provider.docker=true
+      - --providers.docker.watch=true
+      - --provider.docker.network=web
+      - --provider.docker.exposedbydefault=false
+      - --log.level=debug
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.rule=Host(`dashboard.traefik.me`)
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
     volumes:
-      - $PWD/jenkins_home:/var/jenkins_home
-      - $PWD:/app
-    user: 0:0
+      - ./traefik.yml:/etc/traefik/traefik.yml
+      - ./tls.yml:/etc/traefik/tls.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - certs:/etc/ssl/traefik
+    networks: 
+      - web
 
-#---------------------
-# mysql database
-#--------------------- 
-  mysql:
-    container_name: mysql
-    image: mysql:latest
-    ports:
-      - 3306:3306 #VM:Containter
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+  reverse-proxy-https-helper:
+    image: alpine
+    command: sh -c "cd /etc/ssl/traefik
+      && wget traefik.me/cert.pem -O cert.pem
+      && wget traefik.me/privkey.pem -O privkey.pem"
     volumes:
-      - $PWD/sql/sql-backup/:/backup/
-    command: --character-set-server=utf8 --collation-server=utf8_general_ci
+      - certs:/etc/ssl/traefik
+    networks: 
+      - web
+      - private
 
-#---------------------
-# phpmyadmin
-#---------------------  
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: docker-phpmyadmin
-    depends_on:
-      - mysql
-    ports:
-      - 8081:80 #VM:Containter
-    environment:
-      MYSQL_USERNAME: ${MYSQL_USERNAME}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      PMA_HOST: mysql
+    
+  gogs-db:
+    image: postgres:13-alpine
+    container_name: gogs-db
+    volumes: 
+      - ./data/gogs/postgres:/var/lib/postgresql/data
+    networks: 
+      - private
+    environment: 
+      - POSTGRES_DB=gogs
+      - POSTGRES_USER=gogs
+      - POSTGRES_PASSWORD=gogs
+    restart: always
 
+    
+# #---------------------
+# # phpmyadmin
+# #---------------------  
+#   phpmyadmin:
+#     image: phpmyadmin/phpmyadmin
+#     container_name: docker-phpmyadmin
+#     depends_on:
+#       - gogs-db
+#     environment:
+#       MYSQL_USERNAME: ${MYSQL_USERNAME}
+#       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#       PMA_HOST: mysql
+#     labels:
+#       - "traefik.http.routers.pma.rule=Host(`pma.traefik.me`)"
+#       - "traefik.http.routers.pma-tls.tls.domains[0].main=pma.traefik.me"
+#       - "traefik.http.routers.pma-tls.tls.domains[0].sans=pma.traefik.me"
+#       - "traefik.http.routers.pma.tls=true"
+
+      
 #---------------------
 # gogs
 #---------------------  
   gogs:
-    image: gogs/gogs
+    image: gogs/gogs:latest
     restart: always
     container_name: gogs
     ports:
-      - "10022:22"
-      - 3000:3000
+      - 2222:2222
+    networks: 
+      - private
+      - web
     volumes:
-      - gogs-data:/data
-    depends_on:
-      - mysql
-    environment:
-      MYSQL_DATABASE: gogs
-      MYSQL_USERNAME: ${MYSQL_USERNAME}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      PMA_HOST: mysql
+      - ./data/gogs/data:/data
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.gogs.rule=Host(`gogs.traefik.me`)"
+      - "traefik.http.services.gogs.loadbalancer.server.port=3000"
+      - "traefik.http.routers.gogs-tls.tls.domains[0].main=gogs.traefik.me"
+      - "traefik.http.routers.gogs-tls.tls.domains[0].sans=gogs.traefik.me"
+      - "traefik.http.routers.gogs.tls=true"
 
-#---------------------
-# terraform 
-#---------------------
-
-  # terraform:
-  #   build:
-  #     context: .
-  #     dockerfile: terraform.Dockerfile
-  #   container_name: terraform
-  #   networks:
-  #     - proxy
-
- 
+volumes:
+  certs:
