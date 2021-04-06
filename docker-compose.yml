@@ -1,15 +1,17 @@
 version: '3'
 networks: 
-  web:
   private:
+  web:
+  
     
 services:
   traefik:
+    container_name: traefik
     restart: unless-stopped
     image: traefik:v2.4.2
     ports:
-      - "80:80"
-      - "443:443"
+      - 80:80
+      - 443:443
     command:
       - --api=true
       - --api.dashboard=true
@@ -23,7 +25,7 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.traefik.rule=Host(`dashboard.traefik.me`)
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+      - traefik.http.services.traefik.loadbalancer.server.port=8080
     volumes:
       - ./traefik.yml:/etc/traefik/traefik.yml
       - ./tls.yml:/etc/traefik/tls.yml
@@ -58,25 +60,6 @@ services:
     restart: always
 
     
-# #---------------------
-# # phpmyadmin
-# #---------------------  
-#   phpmyadmin:
-#     image: phpmyadmin/phpmyadmin
-#     container_name: docker-phpmyadmin
-#     depends_on:
-#       - gogs-db
-#     environment:
-#       MYSQL_USERNAME: ${MYSQL_USERNAME}
-#       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-#       PMA_HOST: mysql
-#     labels:
-#       - "traefik.http.routers.pma.rule=Host(`pma.traefik.me`)"
-#       - "traefik.http.routers.pma-tls.tls.domains[0].main=pma.traefik.me"
-#       - "traefik.http.routers.pma-tls.tls.domains[0].sans=pma.traefik.me"
-#       - "traefik.http.routers.pma.tls=true"
-
-      
 #---------------------
 # gogs
 #---------------------  
@@ -95,9 +78,70 @@ services:
       - traefik.enable=true
       - "traefik.http.routers.gogs.rule=Host(`gogs.traefik.me`)"
       - "traefik.http.services.gogs.loadbalancer.server.port=3000"
-      - "traefik.http.routers.gogs-tls.tls.domains[0].main=gogs.traefik.me"
-      - "traefik.http.routers.gogs-tls.tls.domains[0].sans=gogs.traefik.me"
+      - "traefik.http.routers.gogs.tls.domains[0].main=gogs.traefik.me"
+      - "traefik.http.routers.gogs.tls.domains[0].sans=gogs.traefik.me"
       - "traefik.http.routers.gogs.tls=true"
+
+  
+#---------------------
+# mysql database
+#--------------------- 
+  mysql:
+    container_name: mysql
+    image: mysql:latest
+    ports:
+      - 3306:3306 #VM:Containter
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - $PWD/sql/sql-backup/:/backup/
+    command: --character-set-server=utf8 --collation-server=utf8_general_ci
+
+
+   
+# #---------------------
+# # phpmyadmin
+# #---------------------  
+  phpmyadmin:
+     image: phpmyadmin/phpmyadmin
+     container_name: phpmyadmin
+     depends_on:
+       - mysql
+     environment:
+       MYSQL_USERNAME: ${MYSQL_USERNAME}
+       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+       PMA_HOST: mysql
+     labels:
+       - "traefik.http.routers.pma.rule=Host(`pma.traefik.me`)"
+       - "traefik.http.routers.pma.tls.domains[0].main=pma.traefik.me"
+       - "traefik.http.routers.pma.tls.domains[0].sans=pma.traefik.me"
+       - "traefik.http.routers.pma.tls=true"
+
+      
+#---------------------
+# jenkins 
+#---------------------
+
+  jenkins:
+    build:
+      context: .
+      dockerfile: jenkins.Dockerfile
+    container_name: jenkins
+    volumes:
+      - ./data/jenkins/jenkins_home:/var/jenkins_home
+      - $PWD:/app
+#    user: 0:0
+    networks: 
+      - private
+      - web
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.jenkins.rule=Host(`jenkins.traefik.me`)"
+      - traefik.http.services.jenkins.loadbalancer.server.port=8080
+      - "traefik.http.routers.jenkins.tls.domains[0].main=jenkins.traefik.me"
+      - "traefik.http.routers.jenkins.tls.domains[0].sans=jenkins.traefik.me"
+      - "traefik.http.routers.jenkins.tls=true"
 
 volumes:
   certs:
