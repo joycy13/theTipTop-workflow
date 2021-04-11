@@ -1,5 +1,9 @@
-FROM jenkins/jenkins:alpine
+FROM jenkins/jenkins:2.279
+USER root
 
-COPY plugins.txt /usr/share/jenkins/plugins.txt
+RUN apt-get update && apt-get install curl -y
+RUN curl -fsSl https://get.docker.com | sh
+RUN groupmod -g 997 docker
+RUN usermod -aG docker jenkins
 
-RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/plugins.txt
+USER jenkins

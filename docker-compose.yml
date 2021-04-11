@@ -73,45 +73,47 @@ services:
       - traefik.http.routers.gogs.rule=Host(`gogs.dsp4-5archio19-ah-je-gh-yb.fr`)
       - traefik.http.services.gogs.loadbalancer.server.port=3000
 
+
   
-#---------------------
-# mysql database
-#--------------------- 
-  mysql:
-    container_name: mysql
-    image: mysql:latest
-    ports:
-      - 3306:3306 #VM:Containter
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-    networks: 
-      - private
-    volumes:
-      - $PWD/sql/sql-backup/:/backup/
-    command: --character-set-server=utf8 --collation-server=utf8_general_ci
+# #---------------------
+# # mysql database
+# #--------------------- 
+#   mysql:
+#     container_name: mysql
+#     image: mysql:latest
+#     ports:
+#       - 3306:3306 #VM:Containter
+#     environment:
+#       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#       #MYSQL_DATABASE: ${MYSQL_DATABASE}
+#     networks: 
+#       - private
+#     volumes:
+#       - $PWD/sql/sql-backup/:/backup/
+#       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+#     command: --character-set-server=utf8 --collation-server=utf8_general_ci
 
 
    
-# #---------------------
-# # phpmyadmin
-# #---------------------  
-  phpmyadmin:
-     image: phpmyadmin/phpmyadmin
-     container_name: phpmyadmin
-     depends_on:
-       - mysql
-     environment:
-       MYSQL_USERNAME: ${MYSQL_USERNAME}
-       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-       PMA_HOST: mysql
-     labels:
-       - traefik.enable=true
-       - traefik.http.routers.pma.rule=Host(`pma.dsp4-5archio19-ah-je-gh-yb.fr`)
+# # #---------------------
+# # # phpmyadmin
+# # #---------------------  
+#   phpmyadmin:
+#      image: phpmyadmin/phpmyadmin
+#      container_name: phpmyadmin
+#      depends_on:
+#        - mysql
+#      environment:
+#        MYSQL_USERNAME: ${MYSQL_USERNAME}
+#        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+#        PMA_HOST: mysql
+#      labels:
+#        - traefik.enable=true
+#        - traefik.http.routers.pma.rule=Host(`pma.dsp4-5archio19-ah-je-gh-yb.fr`)
        
-     networks: 
-      - private
-      - web
+#      networks: 
+#       - private
+#       - web
       
 #---------------------
 # jenkins 
@@ -124,6 +126,7 @@ services:
     container_name: jenkins
     volumes:
       - ./data/jenkins/jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
       - $PWD:/app
     user: 0:0
     networks: 
