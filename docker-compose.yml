@@ -18,7 +18,6 @@ services:
     command:
       - --api=true
       - --api.dashboard=true
-      
       - "--log.level=DEBUG"
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -26,12 +25,22 @@ services:
       - --providers.docker.network=web
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      #### https ####
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.lets-encr.acme.email=bouskilayehouda+acme@gmail.com
+      - --certificatesresolvers.lets-encr.acme.storage=acme.json
+      - --certificatesresolvers.lets-encr.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.lets-encr.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      
     labels:
       - traefik.enable=true
+      - "traefik.http.routers.traefik.entrypoints=websecure"
       - traefik.http.routers.traefik.rule=Host(`traefik.dsp4-5archio19-ah-je-gh-yb.fr`)
       - traefik.http.services.traefik.loadbalancer.server.port=8080
+      - "traefik.http.routers.traefik.tls.certresolver=lets-encr"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./acme.json:/acme.json
     networks: 
       - web
     extra_hosts:
@@ -74,47 +83,6 @@ services:
       - traefik.http.services.gogs.loadbalancer.server.port=3000
 
 
-  
-# #---------------------
-# # mysql database
-# #--------------------- 
-#   mysql:
-#     container_name: mysql
-#     image: mysql:latest
-#     ports:
-#       - 3306:3306 #VM:Containter
-#     environment:
-#       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-#       #MYSQL_DATABASE: ${MYSQL_DATABASE}
-#     networks: 
-#       - private
-#     volumes:
-#       - $PWD/sql/sql-backup/:/backup/
-#       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
-#     command: --character-set-server=utf8 --collation-server=utf8_general_ci
-
-
-   
-# # #---------------------
-# # # phpmyadmin
-# # #---------------------  
-#   phpmyadmin:
-#      image: phpmyadmin/phpmyadmin
-#      container_name: phpmyadmin
-#      depends_on:
-#        - mysql
-#      environment:
-#        MYSQL_USERNAME: ${MYSQL_USERNAME}
-#        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-#        PMA_HOST: mysql
-#      labels:
-#        - traefik.enable=true
-#        - traefik.http.routers.pma.rule=Host(`pma.dsp4-5archio19-ah-je-gh-yb.fr`)
-       
-#      networks: 
-#       - private
-#       - web
-      
 #---------------------
 # jenkins 
 #---------------------
@@ -134,6 +102,8 @@ services:
       - web
     labels:
       - traefik.enable=true
+      - "traefik.http.routers.jenkins.entrypoints=websecure"
       - traefik.http.routers.jenkins.rule=Host(`jenkins.dsp4-5archio19-ah-je-gh-yb.fr`)
       - traefik.http.services.jenkins.loadbalancer.server.port=8080
+      - "traefik.http.routers.jenkins.tls.certresolver=lets-encr"
 
