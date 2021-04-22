@@ -1,9 +1,25 @@
+log:
+  level: INFO
 
+api:
+  insecure: true
+  dashboard: true
+
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
 
 certificatesResolvers:
   lets-encr:
     acme:
-      caServer: https://acme-v02.api.letsencrypt.org/directory
+      Default: "https://acme-v02.api.letsencrypt.org/directory"
       storage: acme.json
       email: bouskilayehouda+acme@gmail.com
       httpChallenge:
