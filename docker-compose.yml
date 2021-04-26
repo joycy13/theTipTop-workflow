@@ -44,6 +44,7 @@ services:
       - ./acme.json:/acme.json
     networks: 
       - web
+      - private
     extra_hosts:
       - "gogs.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
       - "traefik.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
@@ -51,6 +52,11 @@ services:
       - "pma.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
       - "dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
       - "nexus.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
+      
+     
+#---------------------
+# gogs-db
+#---------------------      
   gogs-db:
     image: postgres:13-alpine
     container_name: gogs-db
@@ -131,4 +137,28 @@ services:
       - "traefik.http.routers.nexus.entrypoints=websecure"
       - traefik.http.routers.nexus.rule=Host(`nexus.dsp4-5archio19-ah-je-gh-yb.fr`)
       - "traefik.http.routers.nexus.tls.certresolver=lets-encr"      
+      
+   
+#---------------------
+# sonarQube
+#---------------------  
+
+  sonarqube:
+    image: sonarqube:alpine
+    networks:
+      - private
+      - web
+    container_name: sonarqube
+    volumes:
+      - ./data/sonarqube/conf:/opt/sonarqube/conf
+      - ./data/sonarqube/data:/opt/sonarqube/data
+      - ./data/sonarqube/logs:/opt/sonarqube/logs
+      - ./data/sonarqube/extensions:/opt/sonarqube/extensions
+    user: 0:0
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.sonarqube.entrypoints=websecure"
+      - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp4-5archio19-ah-je-gh-yb.fr`)
+      - "traefik.http.routers.sonarqube.tls.certresolver=lets-encr"      
+      
 
