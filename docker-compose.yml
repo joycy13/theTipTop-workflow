@@ -142,23 +142,22 @@ services:
 #---------------------
 # sonarQube
 #---------------------  
-
-  sonarqube:
-    image: sonarqube:alpine
-    networks:
-      - private
-      - web
-    container_name: sonarqube
-    volumes:
-      - ./data/sonarqube/conf:/opt/sonarqube/conf
-      - ./data/sonarqube/data:/opt/sonarqube/data
-      - ./data/sonarqube/logs:/opt/sonarqube/logs
-      - ./data/sonarqube/extensions:/opt/sonarqube/extensions
-    user: 0:0
-    labels:
-      - traefik.enable=true
-      - "traefik.http.routers.sonarqube.entrypoints=websecure"
-      - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp4-5archio19-ah-je-gh-yb.fr`)
-      - "traefik.http.routers.sonarqube.tls.certresolver=lets-encr"      
+  # sonarqube:
+  #   image: sonarqube:alpine
+  #   networks:
+  #     - private
+  #     - web
+  #   container_name: sonarqube
+  #   volumes:
+  #     - ./data/sonarqube/conf:/opt/sonarqube/conf
+  #     - ./data/sonarqube/data:/opt/sonarqube/data
+  #     - ./data/sonarqube/logs:/opt/sonarqube/logs
+  #     - ./data/sonarqube/extensions:/opt/sonarqube/extensions
+  #   user: 0:0
+  #   labels:
+  #     - traefik.enable=true
+  #     - "traefik.http.routers.sonarqube.entrypoints=websecure"
+  #     - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp4-5archio19-ah-je-gh-yb.fr`)
+  #     - "traefik.http.routers.sonarqube.tls.certresolver=lets-encr"      
       
 
