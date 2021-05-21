@@ -39,19 +39,27 @@ services:
       - traefik.http.routers.traefik.rule=Host(`traefik.dsp4-5archio19-ah-je-gh-yb.fr`)
       - traefik.http.services.traefik.loadbalancer.server.port=8080
       - "traefik.http.routers.traefik.tls.certresolver=lets-encr"
+      
+      
+      - "traefik.http.middlewares.corsheaders.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE"
+      - "traefik.http.middlewares.corsheaders.headers.accesscontrolalloworiginlist=*"
+      - "traefik.http.middlewares.corsheaders.headers.accessControlAllowHeaders=*"  
+      - "traefik.http.middlewares.corsheaders.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.corsheaders.headers.addvaryheader=true"
+  
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./acme.json:/acme.json
     networks: 
       - web
       - private
-    extra_hosts:
-      - "gogs.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      - "traefik.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      - "jenkins.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      - "pma.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      - "dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      - "nexus.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
+    #extra_hosts:
+     # - "gogs.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
+      #- "traefik.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
+      #- "jenkins.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
+      #- "pma.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
+      #- "dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
+      #- "nexus.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
       
      
 #---------------------
@@ -137,6 +145,46 @@ services:
       - "traefik.http.routers.nexus.entrypoints=websecure"
       - traefik.http.routers.nexus.rule=Host(`nexus.dsp4-5archio19-ah-je-gh-yb.fr`)
       - "traefik.http.routers.nexus.tls.certresolver=lets-encr"      
+      
+      
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.0.0
+    container_name: prometheus
+    volumes:
+     - ./data/prometheus/etc:/etc/prometheus/
+     - ./data/prometheus/:/prometheus/
+    command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
+    ports:
+     - 9090
+    user: 0:0
+    networks: 
+      - private
+      - web
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - traefik.http.routers.prometheus.rule=Host(`prometheus.dsp4-5archio19-ah-je-gh-yb.fr`)
+      - "traefik.http.routers.prometheus.tls.certresolver=lets-encr"     
+     
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+     - 3000
+    user: 0:0
+    networks: 
+      - private
+      - web
+    volumes:
+      - ./data/grafana/:/var/lib/grafana
+      - ./data/grafana/provisioning/:/etc/grafana/provisioning/
+    depends_on:
+      - prometheus
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - traefik.http.routers.grafana.rule=Host(`grafana.dsp4-5archio19-ah-je-gh-yb.fr`)
+      - "traefik.http.routers.grafana.tls.certresolver=lets-encr"     
       
    
 #---------------------
