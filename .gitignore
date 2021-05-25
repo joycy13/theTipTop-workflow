@@ -3,4 +3,4 @@ environements/**
 jenkins_home/**
 /data
 gogs_admin*
-acme.json
+/acme.json
