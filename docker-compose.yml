@@ -32,13 +32,22 @@ services:
       - --certificatesresolvers.lets-encr.acme.storage=acme.json
       - --certificatesresolvers.lets-encr.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.lets-encr.acme.httpchallenge=true
+      - --metrics.prometheus=true
+      - --metrics.prometheus.buckets=0.1,0.3,1.2,5.0
       
     labels:
       - traefik.enable=true
+       ## HTTPS CHALLENGE
       - "traefik.http.routers.traefik.entrypoints=websecure"
       - traefik.http.routers.traefik.rule=Host(`traefik.dsp4-5archio19-ah-je-gh-yb.fr`)
       - traefik.http.services.traefik.loadbalancer.server.port=8080
       - "traefik.http.routers.traefik.tls.certresolver=lets-encr"
+      
+       ## HTTP REDIRECT
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.redirect-https.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.redirect-https.entrypoints=web"
+      - "traefik.http.routers.redirect-https.middlewares=redirect-to-https"
       
       
       - "traefik.http.middlewares.corsheaders.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE"
@@ -53,13 +62,6 @@ services:
     networks: 
       - web
       - private
-    #extra_hosts:
-     # - "gogs.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      #- "traefik.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      #- "jenkins.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      #- "pma.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      #- "dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
-      #- "nexus.dsp4-5archio19-ah-je-gh-yb.fr:51.159.28.65"
       
      
 #---------------------
@@ -93,6 +95,8 @@ services:
       - web
     volumes:
       - ./data/gogs/data:/data
+    depends_on:
+      - gogs-db
     labels:
       - traefik.enable=true
       - "traefik.http.routers.gogs.entrypoints=websecure"
@@ -151,7 +155,7 @@ services:
     image: quay.io/prometheus/prometheus:v2.0.0
     container_name: prometheus
     volumes:
-     - ./data/prometheus/etc:/etc/prometheus/
+     - ./prometheus.yml:/etc/prometheus//prometheus.yml
      - ./data/prometheus/:/prometheus/
     command: "--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus"
     ports:
@@ -184,28 +188,40 @@ services:
       - traefik.enable=true
       - "traefik.http.routers.grafana.entrypoints=websecure"
       - traefik.http.routers.grafana.rule=Host(`grafana.dsp4-5archio19-ah-je-gh-yb.fr`)
-      - "traefik.http.routers.grafana.tls.certresolver=lets-encr"     
+      - "traefik.http.routers.grafana.tls.certresolver=lets-encr"  
+      
+      
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    command:
+      - '--path.rootfs=/host'
+    network_mode: host
+    pid: host
+    restart: unless-stopped
+    volumes:
+      - '/:/host:ro,rslave'   
       
    
 #---------------------
 # sonarQube
 #---------------------  
-  # sonarqube:
-  #   image: sonarqube:alpine
-  #   networks:
-  #     - private
-  #     - web
-  #   container_name: sonarqube
-  #   volumes:
-  #     - ./data/sonarqube/conf:/opt/sonarqube/conf
-  #     - ./data/sonarqube/data:/opt/sonarqube/data
-  #     - ./data/sonarqube/logs:/opt/sonarqube/logs
-  #     - ./data/sonarqube/extensions:/opt/sonarqube/extensions
-  #   user: 0:0
-  #   labels:
-  #     - traefik.enable=true
-  #     - "traefik.http.routers.sonarqube.entrypoints=websecure"
-  #     - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp4-5archio19-ah-je-gh-yb.fr`)
-  #     - "traefik.http.routers.sonarqube.tls.certresolver=lets-encr"      
+  sonarqube:
+    image: sonarqube:alpine
+    networks:
+      - private
+      - web
+    container_name: sonarqube
+    volumes:
+      - ./data/sonarqube/conf:/opt/sonarqube/conf
+      - ./data/sonarqube/data:/opt/sonarqube/data
+      - ./data/sonarqube/logs:/opt/sonarqube/logs
+      - ./data/sonarqube/extensions:/opt/sonarqube/extensions
+    user: 0:0
+    labels:
+      - traefik.enable=true
+      - "traefik.http.routers.sonarqube.entrypoints=websecure"
+      - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp4-5archio19-ah-je-gh-yb.fr`)
+      - "traefik.http.routers.sonarqube.tls.certresolver=lets-encr"      
       
 
