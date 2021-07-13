@@ -229,9 +229,11 @@ services:
     expose:
       - 8080
       
+      
 #---------------------
 # sonarQube
 #---------------------  
+  
   sonarqube:
     image: sonarqube:alpine
     networks:
@@ -244,10 +246,24 @@ services:
       - ./data/sonarqube/logs:/opt/sonarqube/logs
       - ./data/sonarqube/extensions:/opt/sonarqube/extensions
     user: 0:0
+    depends_on: 
+      - sonarqube_db
     labels:
       - traefik.enable=true
       - "traefik.http.routers.sonarqube.entrypoints=websecure"
       - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp4-5archio19-ah-je-gh-yb.fr`)
       - "traefik.http.routers.sonarqube.tls.certresolver=lets-encr"      
       
+  sonarqube_db:
+    image: postgres
+    container_name: sonarqube_db
+    networks:
+      - private
+    environment:
+      POSTGRES_USER: ${SONAR_DB_USER}
+      POSTGRES_PASSWORD: ${SONAR_DB_PWD}
+    volumes:
+      - $PWD/data/postgresql:/var/lib/postgresql
+      # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
+      - $PWD/data/postgresql/postgresql_data:/var/lib/postgresql/data
 
