@@ -4,6 +4,7 @@ networks:
     name: private
   web:
     name: web
+
   
   
     
@@ -233,37 +234,53 @@ services:
 #---------------------
 # sonarQube
 #---------------------  
-  
   sonarqube:
-    image: sonarqube:alpine
+    image: sonarqube:9.0-community
+    container_name: sonarqube
+    depends_on:
+      - sonarqube-db
+    ports:
+      - "9000:9000"
     networks:
       - private
       - web
-    container_name: sonarqube
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonar
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonar
     volumes:
-      - ./data/sonarqube/conf:/opt/sonarqube/conf
-      - ./data/sonarqube/data:/opt/sonarqube/data
-      - ./data/sonarqube/logs:/opt/sonarqube/logs
-      - ./data/sonarqube/extensions:/opt/sonarqube/extensions
-    user: 0:0
-    depends_on: 
-      - sonarqube_db
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_temp:/opt/sonarqube/temp
     labels:
       - traefik.enable=true
       - "traefik.http.routers.sonarqube.entrypoints=websecure"
       - traefik.http.routers.sonarqube.rule=Host(`sonarqube.dsp4-5archio19-ah-je-gh-yb.fr`)
-      - "traefik.http.routers.sonarqube.tls.certresolver=lets-encr"      
+      - "traefik.http.routers.sonarqube.tls.certresolver=lets-encr" 
       
-  sonarqube_db:
+      
+  sonarqube-db:
+    container_name: sonarqube-db
     image: postgres
-    container_name: sonarqube_db
     networks:
       - private
     environment:
-      POSTGRES_USER: ${SONAR_DB_USER}
-      POSTGRES_PASSWORD: ${SONAR_DB_PWD}
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+      
     volumes:
-      - $PWD/data/postgresql:/var/lib/postgresql
+      - postgresql:/var/lib/postgresql
       # This needs explicit mapping due to https://github.com/docker-library/postgres/blob/4e48e3228a30763913ece952c611e5e9b95c8759/Dockerfile.template#L52
-      - $PWD/data/postgresql/postgresql_data:/var/lib/postgresql/data
+      - postgresql_data:/var/lib/postgresql/data
 
+
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  sonarqube_temp:
+  postgresql:
+  postgresql_data:
