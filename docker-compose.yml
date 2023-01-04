@@ -29,7 +29,7 @@ services:
       #### https ####
       - --entrypoints.websecure.address=:443
       - --certificatesresolvers.lets-encr.acme.httpchallenge=true
-      - --certificatesresolvers.lets-encr.acme.email=bouskilayehouda+acme@gmail.com
+      - --certificatesresolvers.lets-encr.acme.email=elmalehjoyce+acme@gmail.com
       - --certificatesresolvers.lets-encr.acme.storage=acme.json
       - --certificatesresolvers.lets-encr.acme.httpchallenge.entrypoint=web
       - --certificatesresolvers.lets-encr.acme.httpchallenge=true

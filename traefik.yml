@@ -21,6 +21,6 @@ certificatesResolvers:
     acme:
       Default: "https://acme-v02.api.letsencrypt.org/directory"
       storage: acme.json
-      email: bouskilayehouda+acme@gmail.com
+      email: elmalehjoyce+acme@gmail.com
       httpChallenge:
         entryPoint: web
